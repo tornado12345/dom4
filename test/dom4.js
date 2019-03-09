@@ -231,6 +231,46 @@ wru.test([
       );
     }
   }, {
+    name: 'toggleAttribute',
+    test: function () {
+      var button = create('button');
+      button.toggleAttribute('disabled');
+      wru.assert(
+        'toggle makes button disabled',
+        button.disabled
+      );
+      button.toggleAttribute('disabled');
+      wru.assert(
+        'toggle enables button again',
+        !button.disabled
+      );
+      button.toggleAttribute('disabled', false);
+      wru.assert(
+        'toggle forced to false does nothing',
+        !button.disabled
+      );
+      button.toggleAttribute('disabled');
+      wru.assert(
+        'toggle re-makes button disabled',
+        button.disabled
+      );
+      button.toggleAttribute('disabled', true);
+      wru.assert(
+        'toggle forced to true does nothing',
+        button.disabled
+      );
+      button.toggleAttribute('disabled', false);
+      wru.assert(
+        'toggle forced to false while true enable the button',
+        !button.disabled
+      );
+      button.toggleAttribute('disabled', true);
+      wru.assert(
+        'toggle forced to true when false disables the button',
+        button.disabled
+      );
+    }
+  }, {
     name: 'DOMTokenList',
     test: function () {
       wru.assert('it exists', create('div').classList);
@@ -564,6 +604,16 @@ wru.test([
       parent.innerHTML = '<div><h1>h1</h1></div><div><p>p</p><h1>h1</h1><b>b</b><ul><li>li</li></ul></div><h1>h1</h1>';
       var div = parent.childNodes[1];
       var result = div.querySelectorAll(':scope > p, :scope li, h1, div > b');
+      wru.assert('correct length', result.length === 4);
+      wru.assert('correct results',
+        findInResult(result, div.childNodes[0]) &&
+        findInResult(result, div.childNodes[1]) &&
+        findInResult(result, div.childNodes[2]) &&
+        findInResult(result, div.childNodes[3].childNodes[0])
+      );
+
+      // should take any value as a string
+      result = div.querySelectorAll([':scope > p', ':scope li', 'h1', 'div > b']);
       wru.assert('correct length', result.length === 4);
       wru.assert('correct results',
         findInResult(result, div.childNodes[0]) &&

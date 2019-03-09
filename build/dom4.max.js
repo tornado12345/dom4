@@ -207,6 +207,21 @@ THE SOFTWARE.
           }
         }
       },
+      // https://dom.spec.whatwg.org/#dom-element-toggleattribute
+      'toggleAttribute', function toggleAttribute(name, force) {
+        var had = this.hasAttribute(name);
+        if (1 < arguments.length) {
+          if (had && !force)
+            this.removeAttribute(name);
+          else if (force && !had)
+            this.setAttribute(name, "");
+        }
+        else if (had)
+          this.removeAttribute(name);
+        else
+          this.setAttribute(name, "");
+        return this.hasAttribute(name);
+      },
       // WARNING - DEPRECATED - use .replaceWith() instead
       'replace', function replace() {
         this.replaceWith.apply(this, arguments);
@@ -234,13 +249,16 @@ THE SOFTWARE.
     if (!(property in ElementPrototype)) {
       ElementPrototype[property] = properties[i - 1];
     }
-    if (property === 'remove') {
+    // avoid unnecessary re-patch when the script is included
+    // gazillion times without any reason whatsoever
+    // https://github.com/WebReflection/dom4/pull/48
+    if (property === 'remove' && !selectRemove._dom4) {
       // see https://github.com/WebReflection/dom4/issues/19
-      HTMLSelectElement.prototype[property] = function () {
+      (HTMLSelectElement.prototype[property] = function () {
         return 0 < arguments.length ?
           selectRemove.apply(this, arguments) :
           ElementPrototype.remove.call(this);
-      };
+      })._dom4 = true;
     }
     // see https://github.com/WebReflection/dom4/issues/18
     if (/^(?:before|after|replace|replaceWith|remove)$/.test(property)) {
@@ -728,7 +746,7 @@ THE SOFTWARE.
         node.setAttribute(dataScope, null);
         var result = method.call(
           node,
-          css.replace(
+          String(css).replace(
             /(^|,\s*)(:scope([ >]|$))/g,
             function ($0, $1, $2, $3) {
               return $1 + '[' + dataScope + ']' + ($3 || ' ');
@@ -740,7 +758,8 @@ THE SOFTWARE.
       }
     }());
   }
-}(window));(function (global){'use strict';
+}(window));
+(function (global){'use strict';
 
   // a WeakMap fallback for DOM nodes only used as key
   var DOMMap = global.WeakMap || (function () {
